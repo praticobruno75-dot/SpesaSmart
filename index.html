@@ -1047,6 +1047,22 @@
             renderShoppingList();
         }
 
+        function addToFavorites(barcode) {
+            const product = db.shoppingList.find(p => p.barcode === barcode);
+            if (!product) return;
+
+            if (!db.favorites.find(p => p.barcode === barcode)) {
+                db.favorites.push(product);
+                saveDB();
+                renderFavorites();
+                showAlert(`${product.name} aggiunto ai preferiti!`, 'success');
+            } else {
+                showAlert(`${product.name} è già nei preferiti`, 'info');
+            }
+
+            removeFromShoppingList(barcode);
+        }
+
         function clearShoppingList() {
             if (confirm('Vuoi davvero svuotare la lista?')) {
                 db.shoppingList = [];
