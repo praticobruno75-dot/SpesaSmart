@@ -233,18 +233,6 @@
             background: #e9ecef;
         }
 
-        .product-item.checked {
-            opacity: 0.6;
-            text-decoration: line-through;
-        }
-
-        .product-checkbox {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
         .product-header {
             display: flex;
             justify-content: space-between;
@@ -824,12 +812,6 @@
             priceHistory: JSON.parse(localStorage.getItem('priceHistory') || '{}')
         };
 
-        // Assicura che ogni item della lista abbia la proprietà checked
-        db.shoppingList = db.shoppingList.map(item => ({
-            ...item,
-            checked: item.checked || false
-        }));
-
         let currentScannedProduct = null;
         let currentEditingBarcode = null;
         let selectionMode = false;
@@ -1050,10 +1032,7 @@
 
         function addToShoppingList(product) {
             if (!db.shoppingList.find(p => p.barcode === product.barcode)) {
-                db.shoppingList.push({
-                    ...product,
-                    checked: false
-                });
+                db.shoppingList.push(product);
                 saveDB();
                 renderShoppingList();
                 showAlert(`${product.name} aggiunto alla lista!`, 'success');
@@ -1170,7 +1149,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                         </svg>
                         <h3>Lista vuota</h3>
-                        <p>Scansiona prodotti o creala dai preferiti</p>
+                        <p>Scansiona prodotti per iniziare</p>
                     </div>
                 `;
                 document.getElementById('list-actions').style.display = 'none';
@@ -1178,21 +1157,19 @@
                 container.innerHTML = `
                     <ul class="product-list">
                         ${db.shoppingList.map(p => `
-                            <li class="product-item ${p.checked ? 'checked' : ''}">
+                            <li class="product-item">
                                 <div class="product-header">
-                                    <div style="display: flex; align-items: start; flex: 1;">
-                                        <input type="checkbox" class="product-checkbox" 
-                                               ${p.checked ? 'checked' : ''} 
-                                               onchange="toggleProductCheck('${p.barcode}')">
-                                        <div class="product-info">
-                                            <div class="product-name">${p.name}</div>
-                                            ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
-                                            <div class="product-barcode">${p.barcode}</div>
-                                            ${p.currentPrice ? `<div class="product-price">${p.currentPrice.toFixed(2)} ${p.currentUnit}</div>` : ''}
-                                        </div>
+                                    <div class="product-info">
+                                        <div class="product-name">${p.name}</div>
+                                        ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
+                                        <div class="product-barcode">${p.barcode}</div>
+                                        ${p.currentPrice ? `<div class="product-price">${p.currentPrice.toFixed(2)} ${p.currentUnit}</div>` : ''}
                                     </div>
                                 </div>
                                 <div class="product-actions">
+                                    <button class="btn btn-warning btn-small" onclick="addToFavorites('${p.barcode}')">
+                                        ⭐ Preferiti
+                                    </button>
                                     <button class="btn btn-danger btn-small" onclick="removeFromShoppingList('${p.barcode}')">
                                         🗑️ Rimuovi
                                     </button>
@@ -1419,8 +1396,7 @@
                     db.shoppingList.push({
                         ...product,
                         currentPrice: lastPrice ? lastPrice.price : null,
-                        currentUnit: lastPrice ? lastPrice.unit : null,
-                        checked: false
+                        currentUnit: lastPrice ? lastPrice.unit : null
                     });
                 }
             });
@@ -1454,16 +1430,6 @@
             // Funzione legacy - può essere rimossa o mantenuta per compatibilità
         }
 
-        // Funzione per toggle checkbox nella lista spesa
-        function toggleProductCheck(barcode) {
-            const product = db.shoppingList.find(p => p.barcode === barcode);
-            if (product) {
-                product.checked = !product.checked;
-                saveDB();
-                renderShoppingList();
-            }
-        }
-
         // Funzione per copiare lista come testo
         function copyCurrentListAsText() {
             if (db.shoppingList.length === 0) {
@@ -1474,8 +1440,7 @@
             let text = '🛒 LISTA DELLA SPESA\n\n';
             
             db.shoppingList.forEach(p => {
-                const checkbox = p.checked ? '☑' : '☐';
-                let line = `${checkbox} ${p.name}`;
+                let line = `☐ ${p.name}`;
                 
                 if (p.brand) {
                     line += ` - ${p.brand}`;
