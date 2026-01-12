@@ -516,6 +516,45 @@
             padding: 0 15px;
             font-weight: 600;
         }
+
+        /* Supermercati */
+        .supermarket-select {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .supermarket-option {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .supermarket-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            background: #e9ecef;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .best-price-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: #d4edda;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #155724;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -552,6 +591,36 @@
             </div>
 
             <div class="divider"><span>Scanner</span></div>
+
+            <!-- Selezione Supermercato -->
+            <div class="supermarket-select">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #495057;">
+                    🏪 Supermercato
+                </label>
+                <select id="supermarket-select" class="supermarket-option" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;">
+                    <option value="">Seleziona supermercato...</option>
+                    <option value="Conad">🔴 Conad</option>
+                    <option value="Esselunga">🟢 Esselunga</option>
+                    <option value="Coop">🔵 Coop</option>
+                    <option value="Lidl">🟡 Lidl</option>
+                    <option value="Eurospin">🟠 Eurospin</option>
+                    <option value="Carrefour">🔷 Carrefour</option>
+                    <option value="Penny Market">🟣 Penny Market</option>
+                    <option value="MD Discount">🟤 MD Discount</option>
+                    <option value="Iper">⚫ Iper</option>
+                    <option value="Pam">🟢 Pam</option>
+                    <option value="Bennet">🔵 Bennet</option>
+                    <option value="Todis">🟡 Todis</option>
+                    <option value="Unes">🟠 Unes</option>
+                    <option value="Il Gigante">🔴 Il Gigante</option>
+                    <option value="Simply">🟣 Simply</option>
+                    <option value="Famila">🔷 Famila</option>
+                    <option value="Despar">🟢 Despar</option>
+                    <option value="Altro">⚪ Altro</option>
+                </select>
+                <input type="text" id="other-supermarket" placeholder="Inserisci nome supermercato" 
+                       style="width: 100%; margin-top: 10px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; display: none;">
+            </div>
             
             <button id="start-scan-btn" class="btn btn-primary" onclick="startScanner()">
                 📷 Avvia Scanner
@@ -794,6 +863,28 @@
                     });
                     console.log('Listener input configurato');
                 }
+
+                // Listener per select supermercato
+                const supermarketSelect = document.getElementById('supermarket-select');
+                const otherSupermarket = document.getElementById('other-supermarket');
+                
+                if (supermarketSelect) {
+                    supermarketSelect.addEventListener('change', function() {
+                        if (this.value === 'Altro') {
+                            otherSupermarket.style.display = 'block';
+                            currentSupermarket = '';
+                        } else {
+                            otherSupermarket.style.display = 'none';
+                            currentSupermarket = this.value;
+                        }
+                    });
+                }
+
+                if (otherSupermarket) {
+                    otherSupermarket.addEventListener('input', function() {
+                        currentSupermarket = this.value;
+                    });
+                }
                 
                 console.log('✅ App inizializzata con successo!');
             } catch (error) {
@@ -813,6 +904,29 @@
         let currentEditingBarcode = null;
         let selectionMode = false;
         let selectedFavorites = new Set();
+        let currentSupermarket = '';
+
+        // Mappa emoji supermercati
+        const supermarketEmojis = {
+            'Conad': '🔴',
+            'Esselunga': '🟢',
+            'Coop': '🔵',
+            'Lidl': '🟡',
+            'Eurospin': '🟠',
+            'Carrefour': '🔷',
+            'Penny Market': '🟣',
+            'MD Discount': '🟤',
+            'Iper': '⚫',
+            'Pam': '🟢',
+            'Bennet': '🔵',
+            'Todis': '🟡',
+            'Unes': '🟠',
+            'Il Gigante': '🔴',
+            'Simply': '🟣',
+            'Famila': '🔷',
+            'Despar': '🟢',
+            'Altro': '⚪'
+        };
 
         // Scanner
         let codeReader = null;
@@ -959,9 +1073,15 @@
                 return;
             }
 
+            if (!currentSupermarket) {
+                showAlert('Seleziona un supermercato', 'warning');
+                return;
+            }
+
             const priceEntry = {
                 price: priceValue,
                 unit: priceUnit,
+                supermarket: currentSupermarket,
                 date: new Date().toISOString()
             };
 
@@ -975,7 +1095,8 @@
             const productWithPrice = {
                 ...currentScannedProduct,
                 currentPrice: priceValue,
-                currentUnit: priceUnit
+                currentUnit: priceUnit,
+                currentSupermarket: currentSupermarket
             };
 
             addToShoppingList(productWithPrice);
@@ -1104,13 +1225,24 @@
 
             let content = `<h3>${product.name}</h3>`;
             
+            // Calcola miglior prezzo
+            const bestPrice = history.reduce((min, entry) => 
+                entry.price < min.price ? entry : min
+            );
+            
+            content += `<div class="best-price-badge">
+                💰 Miglior prezzo: ${bestPrice.price.toFixed(2)} ${bestPrice.unit} 
+                ${supermarketEmojis[bestPrice.supermarket] || '🏪'} ${bestPrice.supermarket}
+            </div>`;
+            
             // Lista prezzi
             content += '<div class="price-history"><h4>📋 Storico</h4>';
             history.forEach(entry => {
                 const date = new Date(entry.date).toLocaleDateString('it-IT');
+                const emoji = supermarketEmojis[entry.supermarket] || '🏪';
                 content += `
                     <div class="price-history-item">
-                        <span>${date}</span>
+                        <span>${date} - ${emoji} ${entry.supermarket}</span>
                         <strong>${entry.price.toFixed(2)} ${entry.unit}</strong>
                     </div>
                 `;
@@ -1130,26 +1262,63 @@
             if (history.length > 1) {
                 setTimeout(() => {
                     const ctx = document.getElementById('price-chart').getContext('2d');
+                    
+                    // Raggruppa per supermercato
+                    const datasets = {};
+                    const colors = {
+                        'Conad': '#e74c3c',
+                        'Esselunga': '#27ae60',
+                        'Coop': '#3498db',
+                        'Lidl': '#f1c40f',
+                        'Eurospin': '#e67e22',
+                        'Carrefour': '#1abc9c',
+                        'Penny Market': '#9b59b6',
+                        'MD Discount': '#795548',
+                        'Iper': '#34495e',
+                        'Pam': '#16a085',
+                        'Bennet': '#2980b9',
+                        'Todis': '#f39c12',
+                        'Unes': '#d35400',
+                        'Il Gigante': '#c0392b',
+                        'Simply': '#8e44ad',
+                        'Famila': '#16a085',
+                        'Despar': '#27ae60',
+                        'Altro': '#95a5a6'
+                    };
+                    
+                    history.forEach(entry => {
+                        if (!datasets[entry.supermarket]) {
+                            datasets[entry.supermarket] = {
+                                label: `${supermarketEmojis[entry.supermarket] || '🏪'} ${entry.supermarket}`,
+                                data: [],
+                                borderColor: colors[entry.supermarket] || '#95a5a6',
+                                backgroundColor: (colors[entry.supermarket] || '#95a5a6') + '33',
+                                tension: 0.3
+                            };
+                        }
+                        datasets[entry.supermarket].data.push({
+                            x: new Date(entry.date).toLocaleDateString('it-IT'),
+                            y: entry.price
+                        });
+                    });
+                    
                     new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT')),
-                            datasets: [{
-                                label: 'Prezzo',
-                                data: history.map(h => h.price),
-                                borderColor: '#667eea',
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                tension: 0.3
-                            }]
+                            datasets: Object.values(datasets)
                         },
                         options: {
                             responsive: true,
                             plugins: {
                                 legend: {
-                                    display: false
+                                    display: true,
+                                    position: 'bottom'
                                 }
                             },
                             scales: {
+                                x: {
+                                    type: 'category'
+                                },
                                 y: {
                                     beginAtZero: false,
                                     ticks: {
@@ -1234,10 +1403,19 @@
                         ${db.favorites.map(p => {
                             const history = db.priceHistory[p.barcode] || [];
                             const lastPrice = history.length > 0 ? history[history.length - 1] : null;
+                            
+                            // Trova miglior prezzo
+                            let bestPrice = null;
+                            if (history.length > 0) {
+                                bestPrice = history.reduce((min, entry) => 
+                                    entry.price < min.price ? entry : min
+                                );
+                            }
+                            
                             const isSelected = selectedFavorites.has(p.barcode);
                             
                             return `
-                                <div class="favorite-card ${isSelected ? 'selected' : ''}" ${selectionMode ? `onclick="toggleFavoriteSelection('${p.barcode}')"` : ''}>
+                                <div class="favorite-card ${isSelected ? 'selected' : ''}" ${selectionMode ? `onclick="toggleFavoriteSelection('${p.barcode}')"` : `onclick="addFavoriteToList('${p.barcode}')"`}>
                                     ${selectionMode ? `
                                         <input type="checkbox" class="favorite-checkbox" 
                                                ${isSelected ? 'checked' : ''} 
@@ -1246,7 +1424,17 @@
                                     <div class="favorite-icon">📦</div>
                                     <div class="favorite-name">${p.name}</div>
                                     ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
-                                    ${lastPrice ? `<div class="favorite-price">${lastPrice.price.toFixed(2)} ${lastPrice.unit}</div>` : ''}
+                                    ${bestPrice ? `
+                                        <div style="margin-top: 8px; padding: 5px; background: #d4edda; border-radius: 5px;">
+                                            <div style="font-size: 11px; color: #155724;">💰 Miglior prezzo</div>
+                                            <div style="font-size: 14px; font-weight: 700; color: #28a745;">
+                                                ${bestPrice.price.toFixed(2)} ${bestPrice.unit}
+                                            </div>
+                                            <div style="font-size: 11px; color: #155724;">
+                                                ${supermarketEmojis[bestPrice.supermarket] || '🏪'} ${bestPrice.supermarket}
+                                            </div>
+                                        </div>
+                                    ` : lastPrice ? `<div class="favorite-price">${lastPrice.price.toFixed(2)} ${lastPrice.unit}</div>` : ''}
                                     ${!selectionMode ? `
                                         <div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center;">
                                             ${history.length > 0 ? `
