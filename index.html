@@ -233,6 +233,18 @@
             background: #e9ecef;
         }
 
+        .product-item.checked {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .product-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
         .product-header {
             display: flex;
             justify-content: space-between;
@@ -290,12 +302,28 @@
             cursor: pointer;
             transition: all 0.3s;
             border: 2px solid transparent;
+            position: relative;
         }
 
         .favorite-card:hover {
             border-color: #667eea;
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .favorite-card.selected {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .favorite-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 10;
         }
 
         .favorite-icon {
@@ -619,6 +647,9 @@
                 </div>
             </div>
             <div id="list-actions" style="display: none; margin-top: 20px;">
+                <button class="btn btn-info" onclick="copyListAsText()">
+                    📋 Copia Lista (WhatsApp)
+                </button>
                 <button class="btn btn-warning" onclick="moveAllToFavorites()">
                     ⭐ Aggiungi Tutto ai Preferiti
                 </button>
@@ -631,6 +662,28 @@
         <!-- TAB PREFERITI -->
         <div id="preferiti" class="tab-content">
             <h2 style="margin-bottom: 20px;">Prodotti preferiti</h2>
+            
+            <div id="favorites-selection-mode" style="display: none; margin-bottom: 20px; padding: 15px; background: #e7f3ff; border-radius: 10px;">
+                <p style="margin-bottom: 10px; font-weight: 600;">✓ Seleziona i prodotti da comprare</p>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success btn-small" onclick="createShoppingListFromFavorites()">
+                        ✅ Crea Lista (<span id="selected-count">0</span>)
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="cancelSelection()">
+                        ❌ Annulla
+                    </button>
+                    <button class="btn btn-info btn-small" onclick="selectAll()">
+                        ☑️ Seleziona Tutto
+                    </button>
+                </div>
+            </div>
+
+            <div id="favorites-normal-mode" style="margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="enterSelectionMode()" id="start-selection-btn">
+                    🛒 Crea Lista della Spesa
+                </button>
+            </div>
+
             <div id="favorites-container">
                 <div class="empty-state">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -740,8 +793,16 @@
             priceHistory: JSON.parse(localStorage.getItem('priceHistory') || '{}')
         };
 
+        // Assicura che ogni item della lista abbia la proprietà checked
+        db.shoppingList = db.shoppingList.map(item => ({
+            ...item,
+            checked: item.checked || false
+        }));
+
         let currentScannedProduct = null;
         let currentEditingBarcode = null;
+        let selectionMode = false;
+        let selectedFavorites = new Set();
 
         // Scanner
         let codeReader = null;
@@ -958,7 +1019,10 @@
 
         function addToShoppingList(product) {
             if (!db.shoppingList.find(p => p.barcode === product.barcode)) {
-                db.shoppingList.push(product);
+                db.shoppingList.push({
+                    ...product,
+                    checked: false
+                });
                 saveDB();
                 renderShoppingList();
                 showAlert(`${product.name} aggiunto alla lista!`, 'success');
@@ -1114,7 +1178,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                         </svg>
                         <h3>Lista vuota</h3>
-                        <p>Scansiona prodotti per iniziare</p>
+                        <p>Scansiona prodotti o creala dai preferiti</p>
                     </div>
                 `;
                 document.getElementById('list-actions').style.display = 'none';
@@ -1122,13 +1186,18 @@
                 container.innerHTML = `
                     <ul class="product-list">
                         ${db.shoppingList.map(p => `
-                            <li class="product-item">
+                            <li class="product-item ${p.checked ? 'checked' : ''}">
                                 <div class="product-header">
-                                    <div class="product-info">
-                                        <div class="product-name">${p.name}</div>
-                                        ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
-                                        <div class="product-barcode">${p.barcode}</div>
-                                        ${p.currentPrice ? `<div class="product-price">${p.currentPrice.toFixed(2)} ${p.currentUnit}</div>` : ''}
+                                    <div style="display: flex; align-items: start; flex: 1;">
+                                        <input type="checkbox" class="product-checkbox" 
+                                               ${p.checked ? 'checked' : ''} 
+                                               onchange="toggleProductCheck('${p.barcode}')">
+                                        <div class="product-info">
+                                            <div class="product-name">${p.name}</div>
+                                            ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
+                                            <div class="product-barcode">${p.barcode}</div>
+                                            ${p.currentPrice ? `<div class="product-price">${p.currentPrice.toFixed(2)} ${p.currentUnit}</div>` : ''}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="product-actions">
@@ -1160,37 +1229,51 @@
                         <p>Aggiungi prodotti dalla lista della spesa</p>
                     </div>
                 `;
+                document.getElementById('start-selection-btn').style.display = 'none';
             } else {
+                document.getElementById('start-selection-btn').style.display = 'block';
+                
                 container.innerHTML = `
                     <div class="favorites-grid">
                         ${db.favorites.map(p => {
                             const history = db.priceHistory[p.barcode] || [];
                             const lastPrice = history.length > 0 ? history[history.length - 1] : null;
+                            const isSelected = selectedFavorites.has(p.barcode);
+                            
                             return `
-                                <div class="favorite-card" onclick="addFavoriteToList('${p.barcode}')">
+                                <div class="favorite-card ${isSelected ? 'selected' : ''}" onclick="${selectionMode ? `toggleFavoriteSelection('${p.barcode}')` : `addFavoriteToList('${p.barcode}')`}">
+                                    ${selectionMode ? `
+                                        <input type="checkbox" class="favorite-checkbox" 
+                                               ${isSelected ? 'checked' : ''} 
+                                               onclick="event.stopPropagation(); toggleFavoriteSelection('${p.barcode}')">
+                                    ` : ''}
                                     <div class="favorite-icon">📦</div>
                                     <div class="favorite-name">${p.name}</div>
                                     ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
                                     ${lastPrice ? `<div class="favorite-price">${lastPrice.price.toFixed(2)} ${lastPrice.unit}</div>` : ''}
-                                    <div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center;">
-                                        ${history.length > 0 ? `
-                                            <button class="btn btn-info btn-small" onclick="event.stopPropagation(); showPriceHistory('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
-                                                📊 Storico
+                                    ${!selectionMode ? `
+                                        <div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center;">
+                                            ${history.length > 0 ? `
+                                                <button class="btn btn-info btn-small" onclick="event.stopPropagation(); showPriceHistory('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                                    📊 Storico
+                                                </button>
+                                            ` : ''}
+                                            <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); editProduct('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                                ✏️ Modifica
                                             </button>
-                                        ` : ''}
-                                        <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); editProduct('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
-                                            ✏️ Modifica
-                                        </button>
-                                        <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeFromFavorites('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
-                                            🗑️
-                                        </button>
-                                    </div>
+                                            <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeFromFavorites('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             `;
                         }).join('')}
                     </div>
                 `;
             }
+            
+            updateSelectionCount();
         }
 
         function switchTab(tabName) {
@@ -1282,6 +1365,142 @@
         function downloadBackupFromPopup() {
             downloadBackup();
             closeBackupPopup();
+        }
+
+        // Funzioni per modalità selezione favoriti
+        function enterSelectionMode() {
+            selectionMode = true;
+            selectedFavorites.clear();
+            document.getElementById('favorites-selection-mode').style.display = 'block';
+            document.getElementById('favorites-normal-mode').style.display = 'none';
+            renderFavorites();
+        }
+
+        function cancelSelection() {
+            selectionMode = false;
+            selectedFavorites.clear();
+            document.getElementById('favorites-selection-mode').style.display = 'none';
+            document.getElementById('favorites-normal-mode').style.display = 'block';
+            renderFavorites();
+        }
+
+        function toggleFavoriteSelection(barcode) {
+            if (selectedFavorites.has(barcode)) {
+                selectedFavorites.delete(barcode);
+            } else {
+                selectedFavorites.add(barcode);
+            }
+            renderFavorites();
+        }
+
+        function selectAll() {
+            db.favorites.forEach(p => selectedFavorites.add(p.barcode));
+            renderFavorites();
+        }
+
+        function updateSelectionCount() {
+            const countEl = document.getElementById('selected-count');
+            if (countEl) {
+                countEl.textContent = selectedFavorites.size;
+            }
+        }
+
+        function createShoppingListFromFavorites() {
+            if (selectedFavorites.size === 0) {
+                showAlert('Seleziona almeno un prodotto', 'warning');
+                return;
+            }
+
+            // Svuota la lista attuale
+            db.shoppingList = [];
+
+            // Aggiungi i prodotti selezionati
+            selectedFavorites.forEach(barcode => {
+                const product = db.favorites.find(p => p.barcode === barcode);
+                if (product) {
+                    const history = db.priceHistory[barcode] || [];
+                    const lastPrice = history.length > 0 ? history[history.length - 1] : null;
+                    
+                    db.shoppingList.push({
+                        ...product,
+                        currentPrice: lastPrice ? lastPrice.price : null,
+                        currentUnit: lastPrice ? lastPrice.unit : null,
+                        checked: false
+                    });
+                }
+            });
+
+            saveDB();
+            cancelSelection();
+            renderShoppingList();
+            switchTab('lista');
+            showAlert(`✅ Lista creata con ${selectedFavorites.size} prodotti!`, 'success');
+        }
+
+        // Funzione per toggle checkbox nella lista spesa
+        function toggleProductCheck(barcode) {
+            const product = db.shoppingList.find(p => p.barcode === barcode);
+            if (product) {
+                product.checked = !product.checked;
+                saveDB();
+                renderShoppingList();
+            }
+        }
+
+        // Funzione per copiare lista come testo
+        function copyListAsText() {
+            if (db.shoppingList.length === 0) {
+                showAlert('La lista è vuota', 'warning');
+                return;
+            }
+
+            let text = '🛒 LISTA DELLA SPESA\n\n';
+            
+            db.shoppingList.forEach(p => {
+                const checkbox = p.checked ? '☑' : '☐';
+                let line = `${checkbox} ${p.name}`;
+                
+                if (p.brand) {
+                    line += ` - ${p.brand}`;
+                }
+                
+                if (p.currentPrice) {
+                    line += ` (${p.currentPrice.toFixed(2)} ${p.currentUnit})`;
+                }
+                
+                text += line + '\n';
+            });
+
+            // Copia negli appunti
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAlert('✅ Lista copiata! Incolla su WhatsApp', 'success');
+                }).catch(err => {
+                    fallbackCopyText(text);
+                });
+            } else {
+                fallbackCopyText(text);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            // Fallback per browser che non supportano clipboard API
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                showAlert('✅ Lista copiata! Incolla su WhatsApp', 'success');
+            } catch (err) {
+                showAlert('❌ Impossibile copiare. Copia manualmente dalla console', 'warning');
+                console.log(text);
+            }
+            
+            document.body.removeChild(textarea);
         }
 
         // Funzioni per modificare prodotti
