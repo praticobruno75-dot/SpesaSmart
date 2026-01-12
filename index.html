@@ -568,27 +568,12 @@
             <button class="tab active" onclick="switchTab('scanner')">📷 Scanner</button>
             <button class="tab" onclick="switchTab('lista')">📝 Lista</button>
             <button class="tab" onclick="switchTab('preferiti')">⭐ Preferiti</button>
+            <button class="tab" onclick="switchTab('impostazioni')">⚙️ Impostazioni</button>
         </div>
 
         <!-- TAB SCANNER -->
         <div id="scanner" class="tab-content active">
             <div id="alert-container"></div>
-            
-            <!-- Backup Section -->
-            <div class="backup-section">
-                <h3 style="margin-bottom: 15px;">💾 Gestione Dati</h3>
-                <div class="backup-buttons">
-                    <button class="btn btn-success" onclick="downloadBackup()" style="flex: 1; margin: 0;">
-                        ⬇️ Scarica Backup
-                    </button>
-                    <div class="file-input-wrapper" style="flex: 1;">
-                        <button class="btn btn-info" style="margin: 0;">
-                            ⬆️ Importa Backup
-                        </button>
-                        <input type="file" id="import-file" accept=".json" onchange="importBackup(event)">
-                    </div>
-                </div>
-            </div>
 
             <div class="divider"><span>Scanner</span></div>
 
@@ -622,7 +607,7 @@
                        style="width: 100%; margin-top: 10px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; display: none;">
             </div>
             
-            <button id="start-scan-btn" class="btn btn-primary" onclick="startScanner()">
+            <button id="start-scan-btn" class="btn btn-primary" onclick="startScanner()" style="padding: 30px 15px; font-size: 18px;">
                 📷 Avvia Scanner
             </button>
             
@@ -746,6 +731,79 @@
                     <h3>Nessun preferito</h3>
                     <p>Aggiungi prodotti dalla lista della spesa</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB IMPOSTAZIONI -->
+        <div id="impostazioni" class="tab-content">
+            <h2 style="margin-bottom: 20px;">⚙️ Impostazioni</h2>
+
+            <!-- Sezione Backup -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px;">💾 Gestione Dati</h3>
+                <p style="color: #6c757d; margin-bottom: 15px; font-size: 14px;">
+                    Esporta i tuoi dati per sicurezza o trasferiscili su un altro dispositivo
+                </p>
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <button class="btn btn-success" onclick="downloadBackup()">
+                        ⬇️ Scarica Backup
+                    </button>
+                    <div class="file-input-wrapper">
+                        <button class="btn btn-info">
+                            ⬆️ Importa Backup
+                        </button>
+                        <input type="file" id="import-file-settings" accept=".json" onchange="importBackup(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Statistiche -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px;">📊 Statistiche</h3>
+                <div id="stats-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: #667eea;" id="stat-products">0</div>
+                        <div style="font-size: 12px; color: #6c757d;">Prodotti salvati</div>
+                    </div>
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: #28a745;" id="stat-favorites">0</div>
+                        <div style="font-size: 12px; color: #6c757d;">Preferiti</div>
+                    </div>
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: #e67e22;" id="stat-prices">0</div>
+                        <div style="font-size: 12px; color: #6c757d;">Prezzi registrati</div>
+                    </div>
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: #3498db;" id="stat-supermarkets">0</div>
+                        <div style="font-size: 12px; color: #6c757d;">Supermercati usati</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Cancella Dati -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #fff3cd; border-radius: 10px; border: 2px solid #ffc107;">
+                <h3 style="margin-bottom: 15px; color: #856404;">⚠️ Zona Pericolosa</h3>
+                <p style="color: #856404; margin-bottom: 15px; font-size: 14px;">
+                    Queste azioni sono irreversibili. Assicurati di fare un backup prima!
+                </p>
+                <button class="btn btn-danger" onclick="clearAllData()">
+                    🗑️ Cancella Tutti i Dati
+                </button>
+            </div>
+
+            <!-- Sezione Info -->
+            <div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px;">ℹ️ Info App</h3>
+                <p style="color: #6c757d; font-size: 14px; line-height: 1.6;">
+                    <strong>Smart Shopping List v2.0</strong><br>
+                    Gestisci la tua spesa, confronta i prezzi tra supermercati e risparmia!<br><br>
+                    <strong>Funzionalità:</strong><br>
+                    • Scansione codici a barre<br>
+                    • Storico prezzi per supermercato<br>
+                    • Grafici comparativi<br>
+                    • Liste condivisibili via WhatsApp<br>
+                    • Backup e sincronizzazione dati
+                </p>
             </div>
         </div>
     </div>
@@ -1470,6 +1528,62 @@
             if (tabName !== 'scanner') {
                 stopScanner();
             }
+
+            // Aggiorna statistiche quando apre la tab impostazioni
+            if (tabName === 'impostazioni') {
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            // Prodotti totali
+            document.getElementById('stat-products').textContent = Object.keys(db.products).length;
+            
+            // Preferiti
+            document.getElementById('stat-favorites').textContent = db.favorites.length;
+            
+            // Prezzi registrati
+            let totalPrices = 0;
+            Object.values(db.priceHistory).forEach(history => {
+                totalPrices += history.length;
+            });
+            document.getElementById('stat-prices').textContent = totalPrices;
+            
+            // Supermercati usati
+            const supermarkets = new Set();
+            Object.values(db.priceHistory).forEach(history => {
+                history.forEach(entry => {
+                    if (entry.supermarket) {
+                        supermarkets.add(entry.supermarket);
+                    }
+                });
+            });
+            document.getElementById('stat-supermarkets').textContent = supermarkets.size;
+        }
+
+        function clearAllData() {
+            if (!confirm('⚠️ ATTENZIONE!\n\nQuesto cancellerà TUTTI i tuoi dati:\n• Prodotti salvati\n• Preferiti\n• Storico prezzi\n• Liste\n\nQuesta azione è IRREVERSIBILE!\n\nSei sicuro di voler continuare?')) {
+                return;
+            }
+
+            if (!confirm('Sei VERAMENTE sicuro?\n\nConsigliamo di fare un backup prima!')) {
+                return;
+            }
+
+            // Cancella tutto
+            db.products = {};
+            db.shoppingList = [];
+            db.favorites = [];
+            db.priceHistory = {};
+            
+            saveDB();
+            
+            // Aggiorna tutte le viste
+            renderShoppingList();
+            renderFavorites();
+            updateStats();
+            
+            showAlert('🗑️ Tutti i dati sono stati cancellati', 'success');
         }
 
         function showAlert(message, type) {
