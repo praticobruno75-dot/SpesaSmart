@@ -667,9 +667,6 @@
                 <button class="btn btn-primary" onclick="enterSelectionMode()" id="start-selection-btn">
                     🛒 Crea Lista della Spesa
                 </button>
-                <button class="btn btn-info" onclick="copyCurrentListAsText()" id="copy-list-btn" style="display: none; margin-top: 10px;">
-                    📋 Copia Lista come Testo
-                </button>
             </div>
 
             <div id="favorites-container">
@@ -1063,6 +1060,23 @@
             removeFromShoppingList(barcode);
         }
 
+        function moveAllToFavorites() {
+            if (db.shoppingList.length === 0) return;
+
+            db.shoppingList.forEach(product => {
+                if (!db.favorites.find(p => p.barcode === product.barcode)) {
+                    db.favorites.push(product);
+                }
+            });
+
+            db.shoppingList = [];
+            saveDB();
+            renderShoppingList();
+            renderFavorites();
+            
+            showBackupPopup();
+        }
+
         function clearShoppingList() {
             if (confirm('Vuoi davvero svuotare la lista?')) {
                 db.shoppingList = [];
@@ -1200,12 +1214,6 @@
 
         function renderFavorites() {
             const container = document.getElementById('favorites-container');
-            
-            // Aggiorna visibilità pulsante copia
-            const copyBtn = document.getElementById('copy-list-btn');
-            if (copyBtn) {
-                copyBtn.style.display = db.shoppingList.length > 0 ? 'block' : 'none';
-            }
             
             if (db.favorites.length === 0) {
                 container.innerHTML = `
@@ -1420,9 +1428,6 @@
             saveDB();
             cancelSelection();
             renderShoppingList();
-            
-            // Mostra pulsante copia in preferiti
-            document.getElementById('copy-list-btn').style.display = 'block';
             
             // Mostra popup
             showAlert(`✅ Lista creata con ${selectedFavorites.size} prodotti!`, 'success');
