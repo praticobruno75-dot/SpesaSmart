@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Shopping List</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Gestisci la tua spesa, confronta i prezzi tra supermercati e risparmia!">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Shopping List">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -59,7 +76,7 @@
             cursor: pointer;
             background: transparent;
             border: none;
-            font-size: 16px;
+            font-size: 24px;
             font-weight: 600;
             color: #6c757d;
             transition: all 0.3s;
@@ -565,10 +582,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('scanner')">📷 Scanner</button>
-            <button class="tab" onclick="switchTab('lista')">📝 Lista</button>
-            <button class="tab" onclick="switchTab('preferiti')">⭐ Preferiti</button>
-            <button class="tab" onclick="switchTab('impostazioni')">⚙️ Impostazioni</button>
+            <button class="tab active" onclick="switchTab('scanner')">📷</button>
+            <button class="tab" onclick="switchTab('lista')">📝</button>
+            <button class="tab" onclick="switchTab('preferiti')">⭐</button>
+            <button class="tab" onclick="switchTab('impostazioni')">⚙️</button>
         </div>
 
         <!-- TAB SCANNER -->
@@ -584,23 +601,23 @@
                 </label>
                 <select id="supermarket-select" class="supermarket-option" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;">
                     <option value="">Seleziona supermercato...</option>
-                    <option value="Conad">🔴 Conad</option>
-                    <option value="Esselunga">🟢 Esselunga</option>
-                    <option value="Coop">🔵 Coop</option>
-                    <option value="Lidl">🟡 Lidl</option>
-                    <option value="Eurospin">🟠 Eurospin</option>
-                    <option value="Carrefour">🔷 Carrefour</option>
-                    <option value="Penny Market">🟣 Penny Market</option>
-                    <option value="MD Discount">🟤 MD Discount</option>
-                    <option value="Iper">⚫ Iper</option>
-                    <option value="Pam">🟢 Pam</option>
                     <option value="Bennet">🔵 Bennet</option>
+                    <option value="Carrefour">🔷 Carrefour</option>
+                    <option value="Coop">🔵 Coop</option>
+                    <option value="Conad">🔴 Conad</option>
+                    <option value="Despar">🟢 Despar</option>
+                    <option value="Esselunga">🟢 Esselunga</option>
+                    <option value="Eurospin">🟠 Eurospin</option>
+                    <option value="Famila">🔷 Famila</option>
+                    <option value="Il Gigante">🔴 Il Gigante</option>
+                    <option value="Iper">⚫ Iper</option>
+                    <option value="Lidl">🟡 Lidl</option>
+                    <option value="MD Discount">🟤 MD Discount</option>
+                    <option value="Pam">🟢 Pam</option>
+                    <option value="Penny Market">🟣 Penny Market</option>
+                    <option value="Simply">🟣 Simply</option>
                     <option value="Todis">🟡 Todis</option>
                     <option value="Unes">🟠 Unes</option>
-                    <option value="Il Gigante">🔴 Il Gigante</option>
-                    <option value="Simply">🟣 Simply</option>
-                    <option value="Famila">🔷 Famila</option>
-                    <option value="Despar">🟢 Despar</option>
                     <option value="Altro">⚪ Altro</option>
                 </select>
                 <input type="text" id="other-supermarket" placeholder="Inserisci nome supermercato" 
@@ -791,6 +808,14 @@
                 </button>
             </div>
 
+            <!-- Sezione Manuale d'Uso -->
+            <div style="margin-bottom: 30px; padding: 20px; background: #e7f3ff; border-radius: 10px; border: 2px solid #3498db;">
+                <h3 style="margin-bottom: 15px; color: #0c5460;">📖 Manuale d'Uso</h3>
+                <button class="btn btn-info" onclick="showManual()">
+                    📚 Apri Guida Completa
+                </button>
+            </div>
+
             <!-- Sezione Info -->
             <div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
                 <h3 style="margin-bottom: 15px;">ℹ️ Info App</h3>
@@ -875,6 +900,140 @@
             </button>
             <button class="btn btn-secondary" onclick="closeListCreatedModal()">
                 ⏭️ Continua
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Manuale d'Uso -->
+    <div id="manual-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>📖 Manuale d'Uso</h2>
+                <button class="modal-close" onclick="closeManual()">×</button>
+            </div>
+            <div style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+                
+                <h3 style="color: #667eea; margin-top: 20px;">📷 Tab Scanner</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>1. Seleziona il supermercato</strong><br>
+                    Prima di scansionare, scegli dove stai facendo la spesa dal menu a tendina.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>2. Scansiona il prodotto</strong><br>
+                    • Clicca "📷 Avvia Scanner"<br>
+                    • Inquadra il codice a barre<br>
+                    • Oppure inserisci il codice manualmente
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>3. Inserisci il prezzo</strong><br>
+                    • Digita il prezzo pagato<br>
+                    • Scegli l'unità (€/pz, €/kg, €/L)<br>
+                    • Clicca "Salva e Aggiungi"
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    Il prodotto verrà salvato nella tab <strong>📝 Lista</strong>
+                </p>
+
+                <h3 style="color: #667eea; margin-top: 25px;">📝 Tab Lista</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    Qui trovi tutti i prodotti che hai appena scansionato.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Cosa puoi fare:</strong><br>
+                    • <strong>⭐ Preferiti</strong>: aggiungi un prodotto ai preferiti<br>
+                    • <strong>⭐ Aggiungi Tutto</strong>: sposta tutti i prodotti nei preferiti<br>
+                    • <strong>🗑️ Rimuovi</strong>: elimina un prodotto dalla lista<br>
+                    • <strong>🗑️ Svuota Lista</strong>: cancella tutta la lista
+                </p>
+                <p style="line-height: 1.6; color: #495057; background: #fff3cd; padding: 10px; border-radius: 5px;">
+                    💡 <strong>Consiglio:</strong> Dopo la spesa, aggiungi tutto ai preferiti per costruire il tuo catalogo personale!
+                </p>
+
+                <h3 style="color: #667eea; margin-top: 25px;">⭐ Tab Preferiti</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    Il tuo catalogo completo di prodotti che compri abitualmente.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Visualizzazione prodotti:</strong><br>
+                    Ogni prodotto mostra:<br>
+                    • 💰 <strong>Miglior prezzo</strong>: il prezzo più basso che hai trovato<br>
+                    • 🏪 <strong>Supermercato</strong>: dove hai trovato il miglior prezzo
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Creare una lista della spesa:</strong><br>
+                    1. Clicca <strong>🛒 Crea Lista della Spesa</strong><br>
+                    2. Seleziona i prodotti che ti servono (checkbox)<br>
+                    3. Clicca <strong>✅ Crea Lista</strong><br>
+                    4. Nel popup, clicca <strong>📋 Copia come Testo</strong><br>
+                    5. Incolla la lista su WhatsApp e inviala!
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Altre azioni:</strong><br>
+                    • <strong>📊 Storico</strong>: vedi tutti i prezzi registrati e il grafico comparativo<br>
+                    • <strong>✏️ Modifica</strong>: correggi nome, marca o codice a barre<br>
+                    • <strong>🗑️</strong>: rimuovi dai preferiti
+                </p>
+
+                <h3 style="color: #667eea; margin-top: 25px;">📊 Storico Prezzi</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    Quando clicchi "📊 Storico" su un prodotto vedrai:
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    • 💰 <strong>Badge miglior prezzo</strong> in alto<br>
+                    • 📋 <strong>Lista cronologica</strong> con data, supermercato e prezzo<br>
+                    • 📈 <strong>Grafico</strong> con una linea per ogni supermercato (colori diversi)
+                </p>
+                <p style="line-height: 1.6; color: #495057; background: #d4edda; padding: 10px; border-radius: 5px;">
+                    ✅ <strong>Risparmia!</strong> Confronta i prezzi tra supermercati e vai dove conviene di più!
+                </p>
+
+                <h3 style="color: #667eea; margin-top: 25px;">⚙️ Tab Impostazioni</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>💾 Gestione Dati:</strong><br>
+                    • <strong>Scarica Backup</strong>: salva tutti i tuoi dati in un file .json<br>
+                    • <strong>Importa Backup</strong>: ripristina i dati da un backup precedente
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>📊 Statistiche:</strong><br>
+                    Vedi quanti prodotti hai salvato, prezzi registrati e supermercati usati.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>⚠️ Cancella Tutti i Dati:</strong><br>
+                    Elimina completamente tutti i dati (azione irreversibile, fai un backup prima!)
+                </p>
+
+                <h3 style="color: #667eea; margin-top: 25px;">💡 Consigli d'Uso</h3>
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p style="line-height: 1.8; color: #0c5460; margin: 0;">
+                        ✓ Fai un <strong>backup regolarmente</strong> per non perdere i dati<br>
+                        ✓ <strong>Registra i prezzi ogni volta</strong> per avere uno storico completo<br>
+                        ✓ Usa la <strong>lista da condividere</strong> per coordinare la spesa in famiglia<br>
+                        ✓ Controlla lo <strong>storico prezzi</strong> prima di fare la spesa per scegliere il supermercato più conveniente<br>
+                        ✓ <strong>Modifica i prodotti</strong> se hai fatto errori di battitura
+                    </p>
+                </div>
+
+                <h3 style="color: #667eea; margin-top: 25px;">❓ Domande Frequenti</h3>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Q: Perdo i dati se chiudo l'app?</strong><br>
+                    A: No! I dati sono salvati nel browser. Ma fai backup regolari per sicurezza.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Q: Posso usare l'app su più dispositivi?</strong><br>
+                    A: Sì! Scarica il backup da un dispositivo e importalo sull'altro.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Q: La fotocamera non si attiva</strong><br>
+                    A: Assicurati di aver dato i permessi alla fotocamera nel browser. In alternativa, inserisci il codice manualmente.
+                </p>
+                <p style="line-height: 1.6; color: #495057;">
+                    <strong>Q: Il prodotto non viene trovato</strong><br>
+                    A: Inseriscilo manualmente! Dopo il primo inserimento, verrà riconosciuto automaticamente.
+                </p>
+
+            </div>
+            <button class="btn btn-primary" onclick="closeManual()" style="margin-top: 20px;">
+                ✅ Ho Capito
             </button>
         </div>
     </div>
@@ -1586,6 +1745,14 @@
             showAlert('🗑️ Tutti i dati sono stati cancellati', 'success');
         }
 
+        function showManual() {
+            document.getElementById('manual-modal').classList.add('show');
+        }
+
+        function closeManual() {
+            document.getElementById('manual-modal').classList.remove('show');
+        }
+
         function showAlert(message, type) {
             const container = document.getElementById('alert-container');
             container.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
@@ -1904,6 +2071,27 @@
             closeEditProductModal();
             showAlert('✅ Prodotto modificato con successo!', 'success');
         }
+
+        // Registrazione Service Worker per PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registrato:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ Errore registrazione Service Worker:', error);
+                    });
+            });
+        }
+
+        // Gestione installazione PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('💡 PWA installabile');
+        });
     </script>
 </body>
 </html>
