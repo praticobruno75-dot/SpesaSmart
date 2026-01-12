@@ -1,8 +1,8 @@
 {
-  "name": "Smart Shopping List",
-  "short_name": "Shopping List",
+  "name": "Speedy Spesa",
+  "short_name": "Speedy Spesa",
   "description": "Gestisci la tua spesa, confronta i prezzi tra supermercati e risparmia!",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
@@ -27,14 +27,14 @@
       "name": "Scansiona Prodotto",
       "short_name": "Scansiona",
       "description": "Avvia lo scanner",
-      "url": "/?tab=scanner",
+      "url": "./?tab=scanner",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "I Miei Preferiti",
       "short_name": "Preferiti",
       "description": "Vedi i tuoi prodotti preferiti",
-      "url": "/?tab=preferiti",
+      "url": "./?tab=preferiti",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

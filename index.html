@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Shopping List</title>
+    <title>Speedy Spesa</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="Gestisci la tua spesa, confronta i prezzi tra supermercati e risparmia!">
@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Shopping List">
+    <meta name="apple-mobile-web-app-title" content="Speedy Spesa">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -577,7 +577,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛒 Smart Shopping List</h1>
+            <h1>🛒 Speedy Spesa</h1>
             <p>Scansiona, confronta prezzi, risparmia</p>
         </div>
 
@@ -820,7 +820,7 @@
             <div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
                 <h3 style="margin-bottom: 15px;">ℹ️ Info App</h3>
                 <p style="color: #6c757d; font-size: 14px; line-height: 1.6;">
-                    <strong>Smart Shopping List v2.0</strong><br>
+                    <strong>Speedy Spesa v2.0</strong><br>
                     Gestisci la tua spesa, confronta i prezzi tra supermercati e risparmia!<br><br>
                     <strong>Funzionalità:</strong><br>
                     • Scansione codici a barre<br>
@@ -2075,7 +2075,7 @@
         // Registrazione Service Worker per PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                navigator.serviceWorker.register('./service-worker.js')
                     .then(registration => {
                         console.log('✅ Service Worker registrato:', registration.scope);
                     })
