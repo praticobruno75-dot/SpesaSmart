@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Shopping List</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -131,6 +132,13 @@
             transition: all 0.3s;
         }
 
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 14px;
+            width: auto;
+            display: inline-block;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -151,12 +159,55 @@
             color: white;
         }
 
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
         .btn-danger {
             background: #dc3545;
             color: white;
-            padding: 8px 12px;
-            font-size: 14px;
-            margin: 0;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        /* Input prezzi */
+        .price-input-section {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .price-input-section.show {
+            display: block;
+        }
+
+        .price-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .price-row input {
+            flex: 2;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .price-row select {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
         }
 
         /* Lista prodotti */
@@ -165,9 +216,6 @@
         }
 
         .product-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             padding: 15px;
             margin: 10px 0;
             background: #f8f9fa;
@@ -177,7 +225,13 @@
 
         .product-item:hover {
             background: #e9ecef;
-            transform: translateX(5px);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
         }
 
         .product-info {
@@ -201,9 +255,18 @@
             font-family: monospace;
         }
 
+        .product-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #28a745;
+            margin: 5px 0;
+        }
+
         .product-actions {
             display: flex;
-            gap: 10px;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
         }
 
         /* Prodotti preferiti */
@@ -229,11 +292,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .favorite-card.selected {
-            background: #667eea;
-            color: white;
-        }
-
         .favorite-icon {
             font-size: 40px;
             margin-bottom: 10px;
@@ -242,6 +300,13 @@
         .favorite-name {
             font-weight: 600;
             font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .favorite-price {
+            font-size: 12px;
+            color: #28a745;
+            font-weight: 600;
         }
 
         /* Input manuale */
@@ -256,7 +321,7 @@
             color: #495057;
         }
 
-        .input-group input {
+        .input-group input, .input-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e9ecef;
@@ -265,7 +330,7 @@
             transition: border-color 0.3s;
         }
 
-        .input-group input:focus {
+        .input-group input:focus, .input-group select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -320,13 +385,122 @@
             background: #f8f9fa;
             border-radius: 10px;
         }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #212529;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .price-history {
+            margin-top: 15px;
+        }
+
+        .price-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9fa;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .backup-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .backup-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #6c757d;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #dee2e6;
+        }
+
+        .divider span {
+            padding: 0 15px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🛒 Smart Shopping List</h1>
-            <p>Scansiona, salva, compra meglio</p>
+            <p>Scansiona, confronta prezzi, risparmia</p>
         </div>
 
         <div class="tabs">
@@ -338,6 +512,24 @@
         <!-- TAB SCANNER -->
         <div id="scanner" class="tab-content active">
             <div id="alert-container"></div>
+            
+            <!-- Backup Section -->
+            <div class="backup-section">
+                <h3 style="margin-bottom: 15px;">💾 Gestione Dati</h3>
+                <div class="backup-buttons">
+                    <button class="btn btn-success" onclick="downloadBackup()" style="flex: 1; margin: 0;">
+                        ⬇️ Scarica Backup
+                    </button>
+                    <div class="file-input-wrapper" style="flex: 1;">
+                        <button class="btn btn-info" style="margin: 0;">
+                            ⬆️ Importa Backup
+                        </button>
+                        <input type="file" id="import-file" accept=".json" onchange="importBackup(event)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"><span>Scanner</span></div>
             
             <button id="start-scan-btn" class="btn btn-primary" onclick="startScanner()">
                 📷 Avvia Scanner
@@ -354,13 +546,7 @@
                 ⏹️ Ferma Scanner
             </button>
 
-            <div style="margin: 30px 0; text-align: center; color: #6c757d;">
-                <div style="display: flex; align-items: center; margin: 20px 0;">
-                    <div style="flex: 1; height: 1px; background: #dee2e6;"></div>
-                    <span style="padding: 0 15px; font-weight: 600;">oppure</span>
-                    <div style="flex: 1; height: 1px; background: #dee2e6;"></div>
-                </div>
-            </div>
+            <div class="divider"><span>oppure</span></div>
 
             <div class="input-group">
                 <label>⌨️ Inserisci codice a barre manualmente</label>
@@ -371,6 +557,27 @@
                 🔍 Cerca Prodotto
             </button>
 
+            <!-- Price Input Section -->
+            <div id="price-input-section" class="price-input-section">
+                <h3 style="margin-bottom: 10px;">💰 Aggiungi Prezzo</h3>
+                <p style="color: #6c757d; margin-bottom: 10px;" id="price-product-name"></p>
+                <div class="price-row">
+                    <input type="number" id="price-value" placeholder="Prezzo" step="0.01" min="0">
+                    <select id="price-unit">
+                        <option value="€/pz">€/pz</option>
+                        <option value="€/kg">€/kg</option>
+                        <option value="€/L">€/L</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="savePriceAndAdd()" style="margin-top: 15px;">
+                    ✅ Salva e Aggiungi alla Lista
+                </button>
+                <button class="btn btn-secondary" onclick="skipPrice()" style="margin-top: 5px;">
+                    ⏭️ Salta (senza prezzo)
+                </button>
+            </div>
+
+            <!-- Manual Input Section -->
             <div id="manual-input-section">
                 <h3 style="margin-bottom: 15px;">Prodotto non trovato</h3>
                 <p style="color: #6c757d; margin-bottom: 15px;">
@@ -402,12 +609,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
                     <h3>Lista vuota</h3>
-                    <p>Scansiona prodotti o aggiungili dai preferiti</p>
+                    <p>Scansiona prodotti per iniziare</p>
                 </div>
             </div>
-            <button class="btn btn-danger" onclick="clearShoppingList()" style="margin-top: 20px; display: none;" id="clear-list-btn">
-                🗑️ Svuota Lista
-            </button>
+            <div id="list-actions" style="display: none; margin-top: 20px;">
+                <button class="btn btn-warning" onclick="moveAllToFavorites()">
+                    ⭐ Aggiungi Tutto ai Preferiti
+                </button>
+                <button class="btn btn-danger" onclick="clearShoppingList()">
+                    🗑️ Svuota Lista
+                </button>
+            </div>
         </div>
 
         <!-- TAB PREFERITI -->
@@ -419,9 +631,36 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                     </svg>
                     <h3>Nessun preferito</h3>
-                    <p>Scansiona prodotti per aggiungerli ai preferiti</p>
+                    <p>Aggiungi prodotti dalla lista della spesa</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Storico Prezzi -->
+    <div id="price-history-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Storico Prezzi</h2>
+                <button class="modal-close" onclick="closePriceHistoryModal()">×</button>
+            </div>
+            <div id="price-history-content"></div>
+        </div>
+    </div>
+
+    <!-- Modal Backup Popup -->
+    <div id="backup-popup-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>💾 Backup</h2>
+            </div>
+            <p style="margin-bottom: 20px;">Vuoi scaricare un backup dei tuoi dati?</p>
+            <button class="btn btn-success" onclick="downloadBackupFromPopup()">
+                ✅ Sì, scarica backup
+            </button>
+            <button class="btn btn-secondary" onclick="closeBackupPopup()">
+                ⏭️ No, continua
+            </button>
         </div>
     </div>
 
@@ -437,14 +676,12 @@
             try {
                 console.log('Inizio inizializzazione app...');
                 
-                // Inizializza rendering
                 renderShoppingList();
                 console.log('Shopping list renderizzata');
                 
                 renderFavorites();
                 console.log('Preferiti renderizzati');
                 
-                // Aggiungi listener per Enter sull'input manuale
                 const input = document.getElementById('manual-barcode-input');
                 if (input) {
                     input.addEventListener('keypress', function(e) {
@@ -461,12 +698,15 @@
             }
         }
 
-        // Database locale
+        // Database locale con prezzi
         let db = {
             products: JSON.parse(localStorage.getItem('products') || '{}'),
             shoppingList: JSON.parse(localStorage.getItem('shoppingList') || '[]'),
-            favorites: JSON.parse(localStorage.getItem('favorites') || '[]')
+            favorites: JSON.parse(localStorage.getItem('favorites') || '[]'),
+            priceHistory: JSON.parse(localStorage.getItem('priceHistory') || '{}')
         };
+
+        let currentScannedProduct = null;
 
         // Scanner
         let codeReader = null;
@@ -476,6 +716,7 @@
             localStorage.setItem('products', JSON.stringify(db.products));
             localStorage.setItem('shoppingList', JSON.stringify(db.shoppingList));
             localStorage.setItem('favorites', JSON.stringify(db.favorites));
+            localStorage.setItem('priceHistory', JSON.stringify(db.priceHistory));
         }
 
         async function startScanner() {
@@ -492,7 +733,6 @@
                     return;
                 }
 
-                // Preferisci la fotocamera posteriore
                 selectedDeviceId = videoInputDevices.find(d => d.label.toLowerCase().includes('back'))?.deviceId 
                     || videoInputDevices[0].deviceId;
 
@@ -525,21 +765,19 @@
             if (db.products[barcode]) {
                 const product = db.products[barcode];
                 showAlert(`Prodotto riconosciuto: ${product.name}`, 'success');
-                addToShoppingList(product);
+                currentScannedProduct = product;
+                showPriceInput(product);
                 return;
             }
 
-            // Cerca su Open Food Facts
             showAlert('Ricerca prodotto in corso...', 'info');
             
             try {
-                // Prova prima con l'API italiana, poi con quella mondiale
                 let response = await fetch(`https://it.openfoodfacts.org/api/v2/product/${barcode}`);
                 let data = await response.json();
 
-                console.log('Risposta API:', data); // Debug
+                console.log('Risposta API:', data);
 
-                // Se non trovato in Italia, prova database mondiale
                 if (!data.product || data.status === 0) {
                     console.log('Tentativo con database mondiale...');
                     response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}`);
@@ -554,16 +792,15 @@
                         image: data.product.image_url || data.product.image_front_url || ''
                     };
 
-                    console.log('Prodotto trovato:', product); // Debug
+                    console.log('Prodotto trovato:', product);
 
-                    // Salva nel database locale
                     db.products[barcode] = product;
                     saveDB();
 
                     showAlert(`✅ Prodotto trovato: ${product.name}`, 'success');
-                    addToShoppingList(product);
+                    currentScannedProduct = product;
+                    showPriceInput(product);
                 } else {
-                    // Prodotto non trovato - chiedi inserimento manuale
                     console.log('Prodotto non trovato nel database');
                     showAlert(`Codice ${barcode} non trovato nel database Open Food Facts`, 'warning');
                     showManualInput(barcode);
@@ -589,24 +826,62 @@
                 return;
             }
             
-            // Pulisci il campo
             input.value = '';
-            
-            // Cerca il prodotto
             handleBarcodeScan(barcode);
         }
 
-        // Permetti di premere Enter per cercare
-        document.addEventListener('DOMContentLoaded', function() {
-            const input = document.getElementById('manual-barcode-input');
-            if (input) {
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        searchManualBarcode();
-                    }
-                });
+        function showPriceInput(product) {
+            document.getElementById('price-product-name').textContent = product.name;
+            document.getElementById('price-input-section').classList.add('show');
+            document.getElementById('price-value').value = '';
+            document.getElementById('price-value').focus();
+        }
+
+        function hidePriceInput() {
+            document.getElementById('price-input-section').classList.remove('show');
+            currentScannedProduct = null;
+        }
+
+        function savePriceAndAdd() {
+            if (!currentScannedProduct) return;
+
+            const priceValue = parseFloat(document.getElementById('price-value').value);
+            const priceUnit = document.getElementById('price-unit').value;
+
+            if (!priceValue || priceValue <= 0) {
+                showAlert('Inserisci un prezzo valido', 'warning');
+                return;
             }
-        });
+
+            const priceEntry = {
+                price: priceValue,
+                unit: priceUnit,
+                date: new Date().toISOString()
+            };
+
+            // Aggiungi allo storico prezzi
+            if (!db.priceHistory[currentScannedProduct.barcode]) {
+                db.priceHistory[currentScannedProduct.barcode] = [];
+            }
+            db.priceHistory[currentScannedProduct.barcode].push(priceEntry);
+
+            // Aggiungi alla lista con prezzo
+            const productWithPrice = {
+                ...currentScannedProduct,
+                currentPrice: priceValue,
+                currentUnit: priceUnit
+            };
+
+            addToShoppingList(productWithPrice);
+            hidePriceInput();
+            saveDB();
+        }
+
+        function skipPrice() {
+            if (!currentScannedProduct) return;
+            addToShoppingList(currentScannedProduct);
+            hidePriceInput();
+        }
 
         function showManualInput(barcode) {
             document.getElementById('scanned-barcode').textContent = barcode;
@@ -641,23 +916,19 @@
             saveDB();
 
             showAlert(`Prodotto "${name}" salvato!`, 'success');
-            addToShoppingList(product);
+            currentScannedProduct = product;
             cancelManualInput();
+            showPriceInput(product);
         }
 
         function addToShoppingList(product) {
-            // Verifica se già presente
             if (!db.shoppingList.find(p => p.barcode === product.barcode)) {
                 db.shoppingList.push(product);
                 saveDB();
                 renderShoppingList();
-            }
-
-            // Aggiungi ai preferiti se non presente
-            if (!db.favorites.find(p => p.barcode === product.barcode)) {
-                db.favorites.push(product);
-                saveDB();
-                renderFavorites();
+                showAlert(`${product.name} aggiunto alla lista!`, 'success');
+            } else {
+                showAlert(`${product.name} è già nella lista`, 'info');
             }
         }
 
@@ -675,27 +946,127 @@
             }
         }
 
-        function toggleFavorite(barcode) {
-            const product = db.products[barcode];
+        function addToFavorites(barcode) {
+            const product = db.shoppingList.find(p => p.barcode === barcode);
             if (!product) return;
 
-            const index = db.favorites.findIndex(p => p.barcode === barcode);
-            if (index > -1) {
-                db.favorites.splice(index, 1);
-            } else {
+            if (!db.favorites.find(p => p.barcode === barcode)) {
                 db.favorites.push(product);
+                saveDB();
+                renderFavorites();
+                showAlert(`${product.name} aggiunto ai preferiti!`, 'success');
             }
+
+            removeFromShoppingList(barcode);
+        }
+
+        function moveAllToFavorites() {
+            if (db.shoppingList.length === 0) return;
+
+            db.shoppingList.forEach(product => {
+                if (!db.favorites.find(p => p.barcode === product.barcode)) {
+                    db.favorites.push(product);
+                }
+            });
+
+            db.shoppingList = [];
             saveDB();
+            renderShoppingList();
             renderFavorites();
+            
+            showBackupPopup();
+        }
+
+        function removeFromFavorites(barcode) {
+            if (confirm('Rimuovere dai preferiti?')) {
+                db.favorites = db.favorites.filter(p => p.barcode !== barcode);
+                saveDB();
+                renderFavorites();
+            }
         }
 
         function addFavoriteToList(barcode) {
-            const product = db.products[barcode];
+            const product = db.favorites.find(p => p.barcode === barcode);
             if (product) {
                 addToShoppingList(product);
-                showAlert(`${product.name} aggiunto alla lista!`, 'success');
                 switchTab('lista');
             }
+        }
+
+        function showPriceHistory(barcode) {
+            const product = db.products[barcode];
+            const history = db.priceHistory[barcode] || [];
+
+            if (history.length === 0) {
+                showAlert('Nessuno storico prezzi disponibile', 'info');
+                return;
+            }
+
+            let content = `<h3>${product.name}</h3>`;
+            
+            // Lista prezzi
+            content += '<div class="price-history"><h4>📋 Storico</h4>';
+            history.forEach(entry => {
+                const date = new Date(entry.date).toLocaleDateString('it-IT');
+                content += `
+                    <div class="price-history-item">
+                        <span>${date}</span>
+                        <strong>${entry.price.toFixed(2)} ${entry.unit}</strong>
+                    </div>
+                `;
+            });
+            content += '</div>';
+
+            // Grafico
+            if (history.length > 1) {
+                content += '<div style="margin-top: 30px;"><h4>📈 Andamento</h4>';
+                content += '<canvas id="price-chart"></canvas></div>';
+            }
+
+            document.getElementById('price-history-content').innerHTML = content;
+            document.getElementById('price-history-modal').classList.add('show');
+
+            // Crea grafico
+            if (history.length > 1) {
+                setTimeout(() => {
+                    const ctx = document.getElementById('price-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: history.map(h => new Date(h.date).toLocaleDateString('it-IT')),
+                            datasets: [{
+                                label: 'Prezzo',
+                                data: history.map(h => h.price),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(2) + '€';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }, 100);
+            }
+        }
+
+        function closePriceHistoryModal() {
+            document.getElementById('price-history-modal').classList.remove('show');
         }
 
         function renderShoppingList() {
@@ -708,30 +1079,36 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                         </svg>
                         <h3>Lista vuota</h3>
-                        <p>Scansiona prodotti o aggiungili dai preferiti</p>
+                        <p>Scansiona prodotti per iniziare</p>
                     </div>
                 `;
-                document.getElementById('clear-list-btn').style.display = 'none';
+                document.getElementById('list-actions').style.display = 'none';
             } else {
                 container.innerHTML = `
                     <ul class="product-list">
                         ${db.shoppingList.map(p => `
                             <li class="product-item">
-                                <div class="product-info">
-                                    <div class="product-name">${p.name}</div>
-                                    ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
-                                    <div class="product-barcode">${p.barcode}</div>
+                                <div class="product-header">
+                                    <div class="product-info">
+                                        <div class="product-name">${p.name}</div>
+                                        ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
+                                        <div class="product-barcode">${p.barcode}</div>
+                                        ${p.currentPrice ? `<div class="product-price">${p.currentPrice.toFixed(2)} ${p.currentUnit}</div>` : ''}
+                                    </div>
                                 </div>
                                 <div class="product-actions">
-                                    <button class="btn btn-danger" onclick="removeFromShoppingList('${p.barcode}')">
-                                        🗑️
+                                    <button class="btn btn-warning btn-small" onclick="addToFavorites('${p.barcode}')">
+                                        ⭐ Preferiti
+                                    </button>
+                                    <button class="btn btn-danger btn-small" onclick="removeFromShoppingList('${p.barcode}')">
+                                        🗑️ Rimuovi
                                     </button>
                                 </div>
                             </li>
                         `).join('')}
                     </ul>
                 `;
-                document.getElementById('clear-list-btn').style.display = 'block';
+                document.getElementById('list-actions').style.display = 'block';
             }
         }
 
@@ -745,34 +1122,44 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                         </svg>
                         <h3>Nessun preferito</h3>
-                        <p>Scansiona prodotti per aggiungerli ai preferiti</p>
+                        <p>Aggiungi prodotti dalla lista della spesa</p>
                     </div>
                 `;
             } else {
                 container.innerHTML = `
                     <div class="favorites-grid">
-                        ${db.favorites.map(p => `
-                            <div class="favorite-card" onclick="addFavoriteToList('${p.barcode}')">
-                                <div class="favorite-icon">📦</div>
-                                <div class="favorite-name">${p.name}</div>
-                                ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
-                            </div>
-                        `).join('')}
+                        ${db.favorites.map(p => {
+                            const history = db.priceHistory[p.barcode] || [];
+                            const lastPrice = history.length > 0 ? history[history.length - 1] : null;
+                            return `
+                                <div class="favorite-card" onclick="addFavoriteToList('${p.barcode}')">
+                                    <div class="favorite-icon">📦</div>
+                                    <div class="favorite-name">${p.name}</div>
+                                    ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
+                                    ${lastPrice ? `<div class="favorite-price">${lastPrice.price.toFixed(2)} ${lastPrice.unit}</div>` : ''}
+                                    ${history.length > 0 ? `
+                                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); showPriceHistory('${p.barcode}')" style="margin-top: 10px; font-size: 12px; padding: 5px 10px;">
+                                            📊 Storico
+                                        </button>
+                                    ` : ''}
+                                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeFromFavorites('${p.barcode}')" style="margin-top: 5px; font-size: 12px; padding: 5px 10px;">
+                                        🗑️
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
         }
 
         function switchTab(tabName) {
-            // Rimuovi active da tutti i tab
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            // Aggiungi active al tab selezionato
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
 
-            // Ferma lo scanner se cambio tab
             if (tabName !== 'scanner') {
                 stopScanner();
             }
@@ -785,6 +1172,76 @@
             setTimeout(() => {
                 container.innerHTML = '';
             }, 4000);
+        }
+
+        // Backup functions
+        function downloadBackup() {
+            const backup = {
+                version: '2.0',
+                date: new Date().toISOString(),
+                data: {
+                    products: db.products,
+                    favorites: db.favorites,
+                    priceHistory: db.priceHistory
+                }
+            };
+
+            const dataStr = JSON.stringify(backup, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `shopping-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            showAlert('✅ Backup scaricato!', 'success');
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    
+                    if (!backup.data) {
+                        throw new Error('File backup non valido');
+                    }
+
+                    if (confirm('Importare il backup? I dati attuali verranno sovrascritti.')) {
+                        db.products = backup.data.products || {};
+                        db.favorites = backup.data.favorites || [];
+                        db.priceHistory = backup.data.priceHistory || {};
+                        db.shoppingList = [];
+                        
+                        saveDB();
+                        renderShoppingList();
+                        renderFavorites();
+                        
+                        showAlert('✅ Backup importato con successo!', 'success');
+                    }
+                } catch (error) {
+                    showAlert('❌ Errore nell\'importare il backup: ' + error.message, 'warning');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function showBackupPopup() {
+            document.getElementById('backup-popup-modal').classList.add('show');
+        }
+
+        function closeBackupPopup() {
+            document.getElementById('backup-popup-modal').classList.remove('show');
+        }
+
+        function downloadBackupFromPopup() {
+            downloadBackup();
+            closeBackupPopup();
         }
     </script>
 </body>
