@@ -1,10 +1,10 @@
 const CACHE_NAME = 'smart-shopping-list-v2.0';
 const urlsToCache = [
   '/',
-  '/lista-spesa-v2.html',
+  '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 // Installazione del service worker
