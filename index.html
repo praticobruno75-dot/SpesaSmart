@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Shopping List</title>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            background: white;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Scanner */
+        #scanner-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 20px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #video {
+            width: 100%;
+            display: block;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 40%;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #667eea;
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 0; }
+            50% { top: 100%; }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Lista prodotti */
+        .product-list {
+            list-style: none;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .product-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 5px;
+        }
+
+        .product-brand {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .product-barcode {
+            font-size: 12px;
+            color: #adb5bd;
+            font-family: monospace;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Prodotti preferiti */
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .favorite-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .favorite-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .favorite-card.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .favorite-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .favorite-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Input manuale */
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        #manual-input-section {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Smart Shopping List</h1>
+            <p>Scansiona, salva, compra meglio</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('scanner')">📷 Scanner</button>
+            <button class="tab" onclick="switchTab('lista')">📝 Lista</button>
+            <button class="tab" onclick="switchTab('preferiti')">⭐ Preferiti</button>
+        </div>
+
+        <!-- TAB SCANNER -->
+        <div id="scanner" class="tab-content active">
+            <div id="alert-container"></div>
+            
+            <button id="start-scan-btn" class="btn btn-primary" onclick="startScanner()">
+                📷 Avvia Scanner
+            </button>
+            
+            <div id="scanner-container" style="display: none;">
+                <video id="video" autoplay></video>
+                <div class="scanner-overlay">
+                    <div class="scanner-line"></div>
+                </div>
+            </div>
+
+            <button id="stop-scan-btn" class="btn btn-secondary" onclick="stopScanner()" style="display: none;">
+                ⏹️ Ferma Scanner
+            </button>
+
+            <div style="margin: 30px 0; text-align: center; color: #6c757d;">
+                <div style="display: flex; align-items: center; margin: 20px 0;">
+                    <div style="flex: 1; height: 1px; background: #dee2e6;"></div>
+                    <span style="padding: 0 15px; font-weight: 600;">oppure</span>
+                    <div style="flex: 1; height: 1px; background: #dee2e6;"></div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>⌨️ Inserisci codice a barre manualmente</label>
+                <input type="text" id="manual-barcode-input" placeholder="Es. 8001120191099" 
+                       pattern="[0-9]*" inputmode="numeric">
+            </div>
+            <button class="btn btn-primary" onclick="searchManualBarcode()">
+                🔍 Cerca Prodotto
+            </button>
+
+            <div id="manual-input-section">
+                <h3 style="margin-bottom: 15px;">Prodotto non trovato</h3>
+                <p style="color: #6c757d; margin-bottom: 15px;">
+                    Codice a barre: <strong id="scanned-barcode"></strong>
+                </p>
+                <div class="input-group">
+                    <label>Nome prodotto</label>
+                    <input type="text" id="manual-name" placeholder="Es. Latte intero Granarolo 1L">
+                </div>
+                <div class="input-group">
+                    <label>Marca (opzionale)</label>
+                    <input type="text" id="manual-brand" placeholder="Es. Granarolo">
+                </div>
+                <button class="btn btn-success" onclick="saveManualProduct()">
+                    💾 Salva Prodotto
+                </button>
+                <button class="btn btn-secondary" onclick="cancelManualInput()">
+                    Annulla
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB LISTA -->
+        <div id="lista" class="tab-content">
+            <h2 style="margin-bottom: 20px;">La tua lista della spesa</h2>
+            <div id="shopping-list-container">
+                <div class="empty-state">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <h3>Lista vuota</h3>
+                    <p>Scansiona prodotti o aggiungili dai preferiti</p>
+                </div>
+            </div>
+            <button class="btn btn-danger" onclick="clearShoppingList()" style="margin-top: 20px; display: none;" id="clear-list-btn">
+                🗑️ Svuota Lista
+            </button>
+        </div>
+
+        <!-- TAB PREFERITI -->
+        <div id="preferiti" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Prodotti preferiti</h2>
+            <div id="favorites-container">
+                <div class="empty-state">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                    </svg>
+                    <h3>Nessun preferito</h3>
+                    <p>Scansiona prodotti per aggiungerli ai preferiti</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database locale
+        let db = {
+            products: JSON.parse(localStorage.getItem('products') || '{}'),
+            shoppingList: JSON.parse(localStorage.getItem('shoppingList') || '[]'),
+            favorites: JSON.parse(localStorage.getItem('favorites') || '[]')
+        };
+
+        // Scanner
+        let codeReader = null;
+        let selectedDeviceId = null;
+
+        function saveDB() {
+            localStorage.setItem('products', JSON.stringify(db.products));
+            localStorage.setItem('shoppingList', JSON.stringify(db.shoppingList));
+            localStorage.setItem('favorites', JSON.stringify(db.favorites));
+        }
+
+        async function startScanner() {
+            try {
+                document.getElementById('start-scan-btn').style.display = 'none';
+                document.getElementById('scanner-container').style.display = 'block';
+                document.getElementById('stop-scan-btn').style.display = 'block';
+
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                const videoInputDevices = await codeReader.listVideoInputDevices();
+                
+                if (videoInputDevices.length === 0) {
+                    showAlert('Nessuna fotocamera trovata', 'warning');
+                    return;
+                }
+
+                // Preferisci la fotocamera posteriore
+                selectedDeviceId = videoInputDevices.find(d => d.label.toLowerCase().includes('back'))?.deviceId 
+                    || videoInputDevices[0].deviceId;
+
+                codeReader.decodeFromVideoDevice(selectedDeviceId, 'video', async (result, err) => {
+                    if (result) {
+                        const barcode = result.text;
+                        console.log('Codice scansionato:', barcode);
+                        await handleBarcodeScan(barcode);
+                        stopScanner();
+                    }
+                });
+            } catch (err) {
+                console.error('Errore scanner:', err);
+                showAlert('Errore nell\'avviare lo scanner: ' + err.message, 'warning');
+                stopScanner();
+            }
+        }
+
+        function stopScanner() {
+            if (codeReader) {
+                codeReader.reset();
+            }
+            document.getElementById('scanner-container').style.display = 'none';
+            document.getElementById('start-scan-btn').style.display = 'block';
+            document.getElementById('stop-scan-btn').style.display = 'none';
+        }
+
+        async function handleBarcodeScan(barcode) {
+            // Controlla se già nel database locale
+            if (db.products[barcode]) {
+                const product = db.products[barcode];
+                showAlert(`Prodotto riconosciuto: ${product.name}`, 'success');
+                addToShoppingList(product);
+                return;
+            }
+
+            // Cerca su Open Food Facts
+            showAlert('Ricerca prodotto in corso...', 'info');
+            
+            try {
+                // Prova prima con l'API italiana, poi con quella mondiale
+                let response = await fetch(`https://it.openfoodfacts.org/api/v2/product/${barcode}`);
+                let data = await response.json();
+
+                console.log('Risposta API:', data); // Debug
+
+                // Se non trovato in Italia, prova database mondiale
+                if (!data.product || data.status === 0) {
+                    console.log('Tentativo con database mondiale...');
+                    response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}`);
+                    data = await response.json();
+                }
+
+                if (data.status === 1 && data.product) {
+                    const product = {
+                        barcode: barcode,
+                        name: data.product.product_name || data.product.product_name_it || 'Prodotto sconosciuto',
+                        brand: data.product.brands || '',
+                        image: data.product.image_url || data.product.image_front_url || ''
+                    };
+
+                    console.log('Prodotto trovato:', product); // Debug
+
+                    // Salva nel database locale
+                    db.products[barcode] = product;
+                    saveDB();
+
+                    showAlert(`✅ Prodotto trovato: ${product.name}`, 'success');
+                    addToShoppingList(product);
+                } else {
+                    // Prodotto non trovato - chiedi inserimento manuale
+                    console.log('Prodotto non trovato nel database');
+                    showAlert(`Codice ${barcode} non trovato nel database Open Food Facts`, 'warning');
+                    showManualInput(barcode);
+                }
+            } catch (error) {
+                console.error('Errore API completo:', error);
+                showAlert(`Errore di connessione: ${error.message}. Inserisci il prodotto manualmente.`, 'warning');
+                showManualInput(barcode);
+            }
+        }
+
+        function searchManualBarcode() {
+            const input = document.getElementById('manual-barcode-input');
+            const barcode = input.value.trim();
+            
+            if (!barcode) {
+                showAlert('Inserisci un codice a barre', 'warning');
+                return;
+            }
+            
+            if (!/^\d+$/.test(barcode)) {
+                showAlert('Il codice a barre deve contenere solo numeri', 'warning');
+                return;
+            }
+            
+            // Pulisci il campo
+            input.value = '';
+            
+            // Cerca il prodotto
+            handleBarcodeScan(barcode);
+        }
+
+        // Permetti di premere Enter per cercare
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('manual-barcode-input');
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchManualBarcode();
+                    }
+                });
+            }
+        });
+
+        function showManualInput(barcode) {
+            document.getElementById('scanned-barcode').textContent = barcode;
+            document.getElementById('manual-input-section').style.display = 'block';
+            showAlert('Prodotto non trovato nel database. Inseriscilo manualmente.', 'warning');
+        }
+
+        function cancelManualInput() {
+            document.getElementById('manual-input-section').style.display = 'none';
+            document.getElementById('manual-name').value = '';
+            document.getElementById('manual-brand').value = '';
+        }
+
+        function saveManualProduct() {
+            const barcode = document.getElementById('scanned-barcode').textContent;
+            const name = document.getElementById('manual-name').value.trim();
+            const brand = document.getElementById('manual-brand').value.trim();
+
+            if (!name) {
+                alert('Inserisci il nome del prodotto');
+                return;
+            }
+
+            const product = {
+                barcode: barcode,
+                name: name,
+                brand: brand,
+                image: ''
+            };
+
+            db.products[barcode] = product;
+            saveDB();
+
+            showAlert(`Prodotto "${name}" salvato!`, 'success');
+            addToShoppingList(product);
+            cancelManualInput();
+        }
+
+        function addToShoppingList(product) {
+            // Verifica se già presente
+            if (!db.shoppingList.find(p => p.barcode === product.barcode)) {
+                db.shoppingList.push(product);
+                saveDB();
+                renderShoppingList();
+            }
+
+            // Aggiungi ai preferiti se non presente
+            if (!db.favorites.find(p => p.barcode === product.barcode)) {
+                db.favorites.push(product);
+                saveDB();
+                renderFavorites();
+            }
+        }
+
+        function removeFromShoppingList(barcode) {
+            db.shoppingList = db.shoppingList.filter(p => p.barcode !== barcode);
+            saveDB();
+            renderShoppingList();
+        }
+
+        function clearShoppingList() {
+            if (confirm('Vuoi davvero svuotare la lista?')) {
+                db.shoppingList = [];
+                saveDB();
+                renderShoppingList();
+            }
+        }
+
+        function toggleFavorite(barcode) {
+            const product = db.products[barcode];
+            if (!product) return;
+
+            const index = db.favorites.findIndex(p => p.barcode === barcode);
+            if (index > -1) {
+                db.favorites.splice(index, 1);
+            } else {
+                db.favorites.push(product);
+            }
+            saveDB();
+            renderFavorites();
+        }
+
+        function addFavoriteToList(barcode) {
+            const product = db.products[barcode];
+            if (product) {
+                addToShoppingList(product);
+                showAlert(`${product.name} aggiunto alla lista!`, 'success');
+                switchTab('lista');
+            }
+        }
+
+        function renderShoppingList() {
+            const container = document.getElementById('shopping-list-container');
+            
+            if (db.shoppingList.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                        <h3>Lista vuota</h3>
+                        <p>Scansiona prodotti o aggiungili dai preferiti</p>
+                    </div>
+                `;
+                document.getElementById('clear-list-btn').style.display = 'none';
+            } else {
+                container.innerHTML = `
+                    <ul class="product-list">
+                        ${db.shoppingList.map(p => `
+                            <li class="product-item">
+                                <div class="product-info">
+                                    <div class="product-name">${p.name}</div>
+                                    ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
+                                    <div class="product-barcode">${p.barcode}</div>
+                                </div>
+                                <div class="product-actions">
+                                    <button class="btn btn-danger" onclick="removeFromShoppingList('${p.barcode}')">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                document.getElementById('clear-list-btn').style.display = 'block';
+            }
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favorites-container');
+            
+            if (db.favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                        <h3>Nessun preferito</h3>
+                        <p>Scansiona prodotti per aggiungerli ai preferiti</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="favorites-grid">
+                        ${db.favorites.map(p => `
+                            <div class="favorite-card" onclick="addFavoriteToList('${p.barcode}')">
+                                <div class="favorite-icon">📦</div>
+                                <div class="favorite-name">${p.name}</div>
+                                ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function switchTab(tabName) {
+            // Rimuovi active da tutti i tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            // Aggiungi active al tab selezionato
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // Ferma lo scanner se cambio tab
+            if (tabName !== 'scanner') {
+                stopScanner();
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 4000);
+        }
+
+        // Inizializza
+        renderShoppingList();
+        renderFavorites();
+    </script>
+</body>
+</html>
