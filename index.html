@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Shopping List</title>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         * {
             margin: 0;
@@ -426,7 +425,42 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script>
+        // Aspetta che tutto sia caricato
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('App inizializzata');
+            initApp();
+        });
+
+        function initApp() {
+            try {
+                console.log('Inizio inizializzazione app...');
+                
+                // Inizializza rendering
+                renderShoppingList();
+                console.log('Shopping list renderizzata');
+                
+                renderFavorites();
+                console.log('Preferiti renderizzati');
+                
+                // Aggiungi listener per Enter sull'input manuale
+                const input = document.getElementById('manual-barcode-input');
+                if (input) {
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            searchManualBarcode();
+                        }
+                    });
+                    console.log('Listener input configurato');
+                }
+                
+                console.log('✅ App inizializzata con successo!');
+            } catch (error) {
+                console.error('❌ Errore durante inizializzazione:', error);
+            }
+        }
+
         // Database locale
         let db = {
             products: JSON.parse(localStorage.getItem('products') || '{}'),
@@ -752,10 +786,6 @@
                 container.innerHTML = '';
             }, 4000);
         }
-
-        // Inizializza
-        renderShoppingList();
-        renderFavorites();
     </script>
 </body>
 </html>
