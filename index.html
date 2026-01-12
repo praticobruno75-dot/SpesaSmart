@@ -1595,27 +1595,8 @@
                 return;
             }
 
-            // Svuota la lista attuale
-            db.shoppingList = [];
-
-            // Aggiungi i prodotti selezionati
-            selectedFavorites.forEach(barcode => {
-                const product = db.favorites.find(p => p.barcode === barcode);
-                if (product) {
-                    const history = db.priceHistory[barcode] || [];
-                    const lastPrice = history.length > 0 ? history[history.length - 1] : null;
-                    
-                    db.shoppingList.push({
-                        ...product,
-                        currentPrice: lastPrice ? lastPrice.price : null,
-                        currentUnit: lastPrice ? lastPrice.unit : null
-                    });
-                }
-            });
-
-            saveDB();
+            // Non riempie shoppingList, crea direttamente il testo
             cancelSelection();
-            renderShoppingList();
             
             // Mostra popup
             showAlert(`✅ Lista creata con ${selectedFavorites.size} prodotti!`, 'success');
@@ -1628,11 +1609,17 @@
 
         function closeListCreatedModal() {
             document.getElementById('list-created-modal').classList.remove('show');
+            // Pulisci la selezione quando chiude il modal
+            selectedFavorites.clear();
+            renderFavorites();
         }
 
         function copyListFromPopup() {
             copyCurrentListAsText();
             closeListCreatedModal();
+            // Pulisci la selezione dopo aver copiato
+            selectedFavorites.clear();
+            renderFavorites();
         }
 
         function closeCopyReminder() {
@@ -1641,25 +1628,31 @@
 
         // Funzione per copiare lista come testo
         function copyCurrentListAsText() {
-            if (db.shoppingList.length === 0) {
-                showAlert('La lista è vuota', 'warning');
+            if (selectedFavorites.size === 0) {
+                showAlert('Nessun prodotto selezionato', 'warning');
                 return;
             }
 
             let text = '🛒 LISTA DELLA SPESA\n\n';
             
-            db.shoppingList.forEach(p => {
-                let line = `☐ ${p.name}`;
-                
-                if (p.brand) {
-                    line += ` - ${p.brand}`;
+            selectedFavorites.forEach(barcode => {
+                const product = db.favorites.find(p => p.barcode === barcode);
+                if (product) {
+                    const history = db.priceHistory[barcode] || [];
+                    const lastPrice = history.length > 0 ? history[history.length - 1] : null;
+                    
+                    let line = `☐ ${product.name}`;
+                    
+                    if (product.brand) {
+                        line += ` - ${product.brand}`;
+                    }
+                    
+                    if (lastPrice) {
+                        line += ` (${lastPrice.price.toFixed(2)} ${lastPrice.unit})`;
+                    }
+                    
+                    text += line + '\n';
                 }
-                
-                if (p.currentPrice) {
-                    line += ` (${p.currentPrice.toFixed(2)} ${p.currentUnit})`;
-                }
-                
-                text += line + '\n';
             });
 
             // Copia negli appunti
