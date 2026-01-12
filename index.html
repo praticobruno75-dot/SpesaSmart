@@ -647,9 +647,6 @@
                 </div>
             </div>
             <div id="list-actions" style="display: none; margin-top: 20px;">
-                <button class="btn btn-info" onclick="copyListAsText()">
-                    📋 Copia Lista (WhatsApp)
-                </button>
                 <button class="btn btn-warning" onclick="moveAllToFavorites()">
                     ⭐ Aggiungi Tutto ai Preferiti
                 </button>
@@ -665,7 +662,7 @@
             
             <div id="favorites-selection-mode" style="display: none; margin-bottom: 20px; padding: 15px; background: #e7f3ff; border-radius: 10px;">
                 <p style="margin-bottom: 10px; font-weight: 600;">✓ Seleziona i prodotti da comprare</p>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn btn-success btn-small" onclick="createShoppingListFromFavorites()">
                         ✅ Crea Lista (<span id="selected-count">0</span>)
                     </button>
@@ -681,6 +678,9 @@
             <div id="favorites-normal-mode" style="margin-bottom: 20px;">
                 <button class="btn btn-primary" onclick="enterSelectionMode()" id="start-selection-btn">
                     🛒 Crea Lista della Spesa
+                </button>
+                <button class="btn btn-info" onclick="copyCurrentListAsText()" id="copy-list-btn" style="display: none; margin-top: 10px;">
+                    📋 Copia Lista come Testo
                 </button>
             </div>
 
@@ -747,6 +747,37 @@
             </button>
             <button class="btn btn-secondary" onclick="closeEditProductModal()">
                 Annulla
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Lista Creata -->
+    <div id="list-created-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>✅ Lista Creata!</h2>
+            </div>
+            <p style="margin-bottom: 20px;">La tua lista della spesa è pronta. Puoi copiarla come testo per inviarla via WhatsApp!</p>
+            <button class="btn btn-info" onclick="copyListFromPopup()">
+                📋 Copia come Testo
+            </button>
+            <button class="btn btn-secondary" onclick="closeListCreatedModal()">
+                ⏭️ Continua
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Promemoria Copia Lista -->
+    <div id="copy-reminder-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>✅ Lista Creata!</h2>
+            </div>
+            <p style="margin-bottom: 20px;">
+                Ricordati che puoi copiare la lista come testo per inviarla su WhatsApp usando il pulsante <strong>"📋 Copia Lista"</strong>
+            </p>
+            <button class="btn btn-primary" onclick="closeCopyReminder()">
+                👍 Ok, capito!
             </button>
         </div>
     </div>
@@ -1045,50 +1076,11 @@
             }
         }
 
-        function addToFavorites(barcode) {
-            const product = db.shoppingList.find(p => p.barcode === barcode);
-            if (!product) return;
-
-            if (!db.favorites.find(p => p.barcode === barcode)) {
-                db.favorites.push(product);
-                saveDB();
-                renderFavorites();
-                showAlert(`${product.name} aggiunto ai preferiti!`, 'success');
-            }
-
-            removeFromShoppingList(barcode);
-        }
-
-        function moveAllToFavorites() {
-            if (db.shoppingList.length === 0) return;
-
-            db.shoppingList.forEach(product => {
-                if (!db.favorites.find(p => p.barcode === product.barcode)) {
-                    db.favorites.push(product);
-                }
-            });
-
-            db.shoppingList = [];
-            saveDB();
-            renderShoppingList();
-            renderFavorites();
-            
-            showBackupPopup();
-        }
-
         function removeFromFavorites(barcode) {
             if (confirm('Rimuovere dai preferiti?')) {
                 db.favorites = db.favorites.filter(p => p.barcode !== barcode);
                 saveDB();
                 renderFavorites();
-            }
-        }
-
-        function addFavoriteToList(barcode) {
-            const product = db.favorites.find(p => p.barcode === barcode);
-            if (product) {
-                addToShoppingList(product);
-                switchTab('lista');
             }
         }
 
@@ -1201,9 +1193,6 @@
                                     </div>
                                 </div>
                                 <div class="product-actions">
-                                    <button class="btn btn-warning btn-small" onclick="addToFavorites('${p.barcode}')">
-                                        ⭐ Preferiti
-                                    </button>
                                     <button class="btn btn-danger btn-small" onclick="removeFromShoppingList('${p.barcode}')">
                                         🗑️ Rimuovi
                                     </button>
@@ -1218,6 +1207,12 @@
 
         function renderFavorites() {
             const container = document.getElementById('favorites-container');
+            
+            // Aggiorna visibilità pulsante copia
+            const copyBtn = document.getElementById('copy-list-btn');
+            if (copyBtn) {
+                copyBtn.style.display = db.shoppingList.length > 0 ? 'block' : 'none';
+            }
             
             if (db.favorites.length === 0) {
                 container.innerHTML = `
@@ -1241,7 +1236,7 @@
                             const isSelected = selectedFavorites.has(p.barcode);
                             
                             return `
-                                <div class="favorite-card ${isSelected ? 'selected' : ''}" onclick="${selectionMode ? `toggleFavoriteSelection('${p.barcode}')` : `addFavoriteToList('${p.barcode}')`}">
+                                <div class="favorite-card ${isSelected ? 'selected' : ''}" ${selectionMode ? `onclick="toggleFavoriteSelection('${p.barcode}')"` : ''}>
                                     ${selectionMode ? `
                                         <input type="checkbox" class="favorite-checkbox" 
                                                ${isSelected ? 'checked' : ''} 
@@ -1433,8 +1428,30 @@
             saveDB();
             cancelSelection();
             renderShoppingList();
-            switchTab('lista');
+            
+            // Mostra pulsante copia in preferiti
+            document.getElementById('copy-list-btn').style.display = 'block';
+            
+            // Mostra popup
             showAlert(`✅ Lista creata con ${selectedFavorites.size} prodotti!`, 'success');
+            showListCreatedPopup();
+        }
+
+        function showListCreatedPopup() {
+            document.getElementById('list-created-modal').classList.add('show');
+        }
+
+        function closeListCreatedModal() {
+            document.getElementById('list-created-modal').classList.remove('show');
+        }
+
+        function copyListFromPopup() {
+            copyCurrentListAsText();
+            closeListCreatedModal();
+        }
+
+        function closeCopyReminder() {
+            // Funzione legacy - può essere rimossa o mantenuta per compatibilità
         }
 
         // Funzione per toggle checkbox nella lista spesa
@@ -1448,7 +1465,7 @@
         }
 
         // Funzione per copiare lista come testo
-        function copyListAsText() {
+        function copyCurrentListAsText() {
             if (db.shoppingList.length === 0) {
                 showAlert('La lista è vuota', 'warning');
                 return;
