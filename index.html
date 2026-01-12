@@ -17,6 +17,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
@@ -73,6 +74,7 @@
         .tab-content {
             display: none;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .tab-content.active {
@@ -192,10 +194,12 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            width: 100%;
         }
 
         .price-row input {
             flex: 2;
+            min-width: 0;
             padding: 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
@@ -204,10 +208,12 @@
 
         .price-row select {
             flex: 1;
+            min-width: 80px;
             padding: 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 16px;
+            background: white;
         }
 
         /* Lista prodotti */
@@ -664,6 +670,34 @@
         </div>
     </div>
 
+    <!-- Modal Modifica Prodotto -->
+    <div id="edit-product-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>✏️ Modifica Prodotto</h2>
+                <button class="modal-close" onclick="closeEditProductModal()">×</button>
+            </div>
+            <div class="input-group">
+                <label>Nome prodotto</label>
+                <input type="text" id="edit-product-name" placeholder="Nome prodotto">
+            </div>
+            <div class="input-group">
+                <label>Marca</label>
+                <input type="text" id="edit-product-brand" placeholder="Marca (opzionale)">
+            </div>
+            <div class="input-group">
+                <label>Codice a barre</label>
+                <input type="text" id="edit-product-barcode" placeholder="Codice a barre" pattern="[0-9]*" inputmode="numeric">
+            </div>
+            <button class="btn btn-success" onclick="saveEditedProduct()">
+                ✅ Salva Modifiche
+            </button>
+            <button class="btn btn-secondary" onclick="closeEditProductModal()">
+                Annulla
+            </button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script>
         // Aspetta che tutto sia caricato
@@ -707,6 +741,7 @@
         };
 
         let currentScannedProduct = null;
+        let currentEditingBarcode = null;
 
         // Scanner
         let codeReader = null;
@@ -1137,14 +1172,19 @@
                                     <div class="favorite-name">${p.name}</div>
                                     ${p.brand ? `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">${p.brand}</div>` : ''}
                                     ${lastPrice ? `<div class="favorite-price">${lastPrice.price.toFixed(2)} ${lastPrice.unit}</div>` : ''}
-                                    ${history.length > 0 ? `
-                                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); showPriceHistory('${p.barcode}')" style="margin-top: 10px; font-size: 12px; padding: 5px 10px;">
-                                            📊 Storico
+                                    <div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center;">
+                                        ${history.length > 0 ? `
+                                            <button class="btn btn-info btn-small" onclick="event.stopPropagation(); showPriceHistory('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                                📊 Storico
+                                            </button>
+                                        ` : ''}
+                                        <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); editProduct('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                            ✏️ Modifica
                                         </button>
-                                    ` : ''}
-                                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeFromFavorites('${p.barcode}')" style="margin-top: 5px; font-size: 12px; padding: 5px 10px;">
-                                        🗑️
-                                    </button>
+                                        <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeFromFavorites('${p.barcode}')" style="font-size: 11px; padding: 5px 8px;">
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </div>
                             `;
                         }).join('')}
@@ -1242,6 +1282,110 @@
         function downloadBackupFromPopup() {
             downloadBackup();
             closeBackupPopup();
+        }
+
+        // Funzioni per modificare prodotti
+        function editProduct(barcode) {
+            const product = db.products[barcode];
+            if (!product) return;
+
+            currentEditingBarcode = barcode;
+            
+            document.getElementById('edit-product-name').value = product.name || '';
+            document.getElementById('edit-product-brand').value = product.brand || '';
+            document.getElementById('edit-product-barcode').value = product.barcode || '';
+            
+            document.getElementById('edit-product-modal').classList.add('show');
+        }
+
+        function closeEditProductModal() {
+            document.getElementById('edit-product-modal').classList.remove('show');
+            currentEditingBarcode = null;
+        }
+
+        function saveEditedProduct() {
+            if (!currentEditingBarcode) return;
+
+            const newName = document.getElementById('edit-product-name').value.trim();
+            const newBrand = document.getElementById('edit-product-brand').value.trim();
+            const newBarcode = document.getElementById('edit-product-barcode').value.trim();
+
+            if (!newName) {
+                showAlert('Il nome del prodotto è obbligatorio', 'warning');
+                return;
+            }
+
+            if (!newBarcode || !/^\d+$/.test(newBarcode)) {
+                showAlert('Il codice a barre deve contenere solo numeri', 'warning');
+                return;
+            }
+
+            const oldBarcode = currentEditingBarcode;
+            const oldProduct = db.products[oldBarcode];
+
+            // Se il barcode è cambiato, sposta tutto
+            if (newBarcode !== oldBarcode) {
+                // Controlla se il nuovo barcode esiste già
+                if (db.products[newBarcode] && newBarcode !== oldBarcode) {
+                    if (!confirm('Esiste già un prodotto con questo codice a barre. Sovrascriverlo?')) {
+                        return;
+                    }
+                }
+
+                // Crea nuovo prodotto
+                db.products[newBarcode] = {
+                    barcode: newBarcode,
+                    name: newName,
+                    brand: newBrand,
+                    image: oldProduct.image || ''
+                };
+
+                // Sposta lo storico prezzi
+                if (db.priceHistory[oldBarcode]) {
+                    db.priceHistory[newBarcode] = db.priceHistory[oldBarcode];
+                    delete db.priceHistory[oldBarcode];
+                }
+
+                // Aggiorna nei preferiti
+                const favIndex = db.favorites.findIndex(p => p.barcode === oldBarcode);
+                if (favIndex > -1) {
+                    db.favorites[favIndex] = db.products[newBarcode];
+                }
+
+                // Aggiorna nella lista spesa
+                const listIndex = db.shoppingList.findIndex(p => p.barcode === oldBarcode);
+                if (listIndex > -1) {
+                    db.shoppingList[listIndex] = db.products[newBarcode];
+                }
+
+                // Rimuovi vecchio prodotto
+                delete db.products[oldBarcode];
+            } else {
+                // Solo aggiorna i dati
+                db.products[oldBarcode].name = newName;
+                db.products[oldBarcode].brand = newBrand;
+
+                // Aggiorna anche in preferiti e lista
+                db.favorites.forEach(p => {
+                    if (p.barcode === oldBarcode) {
+                        p.name = newName;
+                        p.brand = newBrand;
+                    }
+                });
+
+                db.shoppingList.forEach(p => {
+                    if (p.barcode === oldBarcode) {
+                        p.name = newName;
+                        p.brand = newBrand;
+                    }
+                });
+            }
+
+            saveDB();
+            renderFavorites();
+            renderShoppingList();
+            closeEditProductModal();
+            showAlert('✅ Prodotto modificato con successo!', 'success');
         }
     </script>
 </body>
