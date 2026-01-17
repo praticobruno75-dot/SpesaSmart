@@ -766,10 +766,10 @@
                         ⬇️ Scarica Backup
                     </button>
                     <div class="file-input-wrapper">
-                        <button class="btn btn-info">
+                        <button class="btn btn-info" onclick="document.getElementById('import-file-settings').click()">
                             ⬆️ Importa Backup
                         </button>
-                        <input type="file" id="import-file-settings" accept=".json" onchange="importBackup(event)">
+                        <input type="file" id="import-file-settings" accept=".json" onchange="importBackup(event)" style="display: none;">
                     </div>
                 </div>
             </div>
@@ -1086,6 +1086,9 @@
                 const otherSupermarket = document.getElementById('other-supermarket');
                 
                 if (supermarketSelect) {
+                    // Inizializza il valore corrente
+                    currentSupermarket = supermarketSelect.value;
+                    
                     supermarketSelect.addEventListener('change', function() {
                         if (this.value === 'Altro') {
                             otherSupermarket.style.display = 'block';
