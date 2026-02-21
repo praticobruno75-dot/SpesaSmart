@@ -1618,9 +1618,14 @@
             } else {
                 document.getElementById('start-selection-btn').style.display = 'block';
                 
+                // Ordina alfabeticamente per nome
+                const sortedFavorites = [...db.favorites].sort((a, b) => 
+                    a.name.localeCompare(b.name, 'it')
+                );
+                
                 container.innerHTML = `
                     <div class="favorites-grid">
-                        ${db.favorites.map(p => {
+                        ${sortedFavorites.map(p => {
                             const history = db.priceHistory[p.barcode] || [];
                             const lastPrice = history.length > 0 ? history[history.length - 1] : null;
                             
@@ -1879,11 +1884,17 @@
                 return;
             }
 
-            // Non riempie shoppingList, crea direttamente il testo
-            cancelSelection();
+            // Salva il numero di prodotti selezionati
+            const count = selectedFavorites.size;
+            
+            // Esci dalla modalità selezione ma NON svuotare selectedFavorites
+            selectionMode = false;
+            document.getElementById('favorites-selection-mode').style.display = 'none';
+            document.getElementById('favorites-normal-mode').style.display = 'block';
+            renderFavorites();
             
             // Mostra popup
-            showAlert(`✅ Lista creata con ${selectedFavorites.size} prodotti!`, 'success');
+            showAlert(`✅ Lista creata con ${count} prodotti!`, 'success');
             showListCreatedPopup();
         }
 
